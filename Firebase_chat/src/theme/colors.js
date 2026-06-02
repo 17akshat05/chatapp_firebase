@@ -1,9 +1,9 @@
 export default {
-  primary: '#7C3AED',
-  secondary: '#A855F7',
-  background: '#0F172A',
-  card: '#1E293B',
+  primary: '#5324a5',
+  secondary: '#7534b1',
+  background: '#020204',
+  card: '#000000',
   white: '#FFFFFF',
-  gray: '#94A3B8',
+  gray: '#e3e3e3',
   input: '#334155',
 };
