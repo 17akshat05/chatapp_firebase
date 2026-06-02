@@ -10,6 +10,7 @@ import colors from '../theme/colors';
 export const MessageBubble = ({
   item,
   onDelete,
+  onEdit,
 }) => {
   const isMine = item.senderId === auth().currentUser.uid;
 
@@ -17,6 +18,10 @@ export const MessageBubble = ({
     if (!isMine) return;
 
     Alert.alert('Message Options', 'Choose Action', [
+      {
+        text: 'Edit',
+        onPress: () => onEdit(item),
+      },
       {
         text: 'Delete',
         style: 'destructive',
@@ -54,7 +59,12 @@ export const MessageBubble = ({
       </Text>
 
       <View style={styles.footer}>
-        <Text style={styles.time}>{formatTime()}</Text>
+        <View style={styles.timeAndEdited}>
+          <Text style={styles.time}>{formatTime()}</Text>
+          {item.edited && !item.deleted && (
+            <Text style={styles.editedTag}>edited</Text>
+          )}
+        </View>
 
         {isMine && (
           <Text style={styles.seen}>
@@ -87,14 +97,24 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   message: {
-    color: colors.white,
-    fontSize: 16,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    color: colors.whispace-between',
     alignItems: 'center',
     marginTop: 5,
+    gap: 5,
+  },
+  timeAndEdited: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  time: {
+    color: colors.gray,
+    fontSize: 10,
+  },
+  editedTag: {
+    color: colors.secondary,
+    fontSize: 9,
+    fontStyle: 'italic',
     gap: 5,
   },
   time: {

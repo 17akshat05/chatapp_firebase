@@ -12,6 +12,7 @@ import {PaginationLoader} from '../components/PaginationLoader';
 import {MessageBubble} from '../components/MessageBubble';
 import {ChatHeader} from '../components/ChatHeader';
 import {ChatInputField} from '../components/ChatInputField';
+import {EditMessageModal} from '../components/EditMessageModal';
 import colors from '../theme/colors';
 
 const PrivateChatScreen = ({route}) => {
@@ -19,6 +20,8 @@ const PrivateChatScreen = ({route}) => {
 
   const [message, setMessage] = useState('');
   const [typingUser, setTypingUser] = useState('');
+  const [editingMessage, setEditingMessage] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Use pagination hook instead of direct firestore query
   const {
@@ -112,6 +115,7 @@ const PrivateChatScreen = ({route}) => {
           seenAt: null,
 
           deleted: false,
+          edited: false,
         });
 
       setMessage('');
@@ -136,10 +140,40 @@ const PrivateChatScreen = ({route}) => {
     }
   };
 
+  const handleEditMessage = (message) => {
+    setEditingMessage(message);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEditedMessage = async (newText) => {
+    if (!editingMessage || !newText.trim()) {
+      return;
+    }
+
+    try {
+      await firestore()
+        .collection('chats')
+        .doc(roomId)
+        .collection('messages')
+        .doc(editingMessage.id)
+        .update({
+          text: newText.trim(),
+          edited: true,
+          editedAt: new Date(),
+        });
+
+      setShowEditModal(false);
+      setEditingMessage(null);
+    } catch (error) {
+      console.log('EDIT MESSAGE ERROR:', error);
+    }
+  };
+
   const renderItem = ({item}) => (
     <MessageBubble
       item={item}
       onDelete={handleDeleteMessage}
+      onEdit={handleEditMessage}
     />
   );
 
@@ -179,6 +213,16 @@ const PrivateChatScreen = ({route}) => {
         onChangeText={handleTyping}
         onSend={sendMessage}
         disabled={paginationLoading}
+      />
+
+      <EditMessageModal
+        visible={showEditModal}
+        message={editingMessage}
+        onSave={handleSaveEditedMessage}
+        onCancel={() => {
+          setShowEditModal(false);
+          setEditingMessage(null);
+        }}
       />
     </View>
   );

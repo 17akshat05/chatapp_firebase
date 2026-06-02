@@ -12,3 +12,4 @@ export {ChatHeader} from './ChatHeader';
 export {ChatInputField} from './ChatInputField';
 export {UserCard} from './UserCard';
 export {Button} from './Button';
+export {EditMessageModal} from './EditMessageModal';
