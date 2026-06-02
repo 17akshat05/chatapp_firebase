@@ -1,5 +1,9 @@
 /**
  * Reusable Message Bubble Component
+ * Shows proper message status indicators:
+ * - Grey tick (✓) = Pending/Offline
+ * - Blue tick (✓) = Sent
+ * - Blue double tick (✓✓) = Seen
  */
 
 import React from 'react';
@@ -11,8 +15,37 @@ export const MessageBubble = ({
   item,
   onDelete,
   onEdit,
+  isOnline = true,
+  isPending = false,
 }) => {
   const isMine = item.senderId === auth().currentUser.uid;
+
+  const getTickStatus = () => {
+    // Pending message (offline or not yet sent)
+    if (isPending || !isOnline) {
+      return {
+        text: '✓',
+        color: colors.gray,
+        label: 'pending',
+      };
+    }
+
+    // Message seen by recipient
+    if (item.seen) {
+      return {
+        text: '✓✓',
+        color: colors.secondary,
+        label: 'seen',
+      };
+    }
+
+    // Message sent (in Firestore)
+    return {
+      text: '✓',
+      color: colors.secondary,
+      label: 'sent',
+    };
+  };
 
   const handleLongPress = () => {
     if (!isMine) return;
@@ -44,6 +77,8 @@ export const MessageBubble = ({
     });
   };
 
+  const tickStatus = getTickStatus();
+
   return (
     <TouchableOpacity
       onLongPress={handleLongPress}
@@ -67,8 +102,8 @@ export const MessageBubble = ({
         </View>
 
         {isMine && (
-          <Text style={styles.seen}>
-            {item.seen ? '✓✓' : '✓'}
+          <Text style={[styles.tick, {color: tickStatus.color}]}>
+            {tickStatus.text}
           </Text>
         )}
       </View>
@@ -97,7 +132,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   message: {
-    color: colors.whispace-between',
+    color: colors.white,
+    fontSize: 16,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 5,
     gap: 5,
@@ -115,14 +155,8 @@ const styles = StyleSheet.create({
     color: colors.secondary,
     fontSize: 9,
     fontStyle: 'italic',
-    gap: 5,
   },
-  time: {
-    color: colors.gray,
-    fontSize: 10,
-  },
-  seen: {
-    color: colors.secondary,
+  tick: {
     fontSize: 10,
     fontWeight: 'bold',
   },
