@@ -11,53 +11,25 @@ import {
 } from 'react-native';
 
 import {auth, firestore} from '../services/firebase';
+import {usePaginatedMessages} from '../hooks/usePaginatedMessages';
+import {PaginationLoader} from '../components/PaginationLoader';
+import colors from '../theme/colors';
 
 const PrivateChatScreen = ({route}) => {
   const {roomId, user} = route.params;
 
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
   const [typingUser, setTypingUser] = useState('');
 
-  useEffect(() => {
-    const unsubscribe = firestore()
-      .collection('chats')
-      .doc(roomId)
-      .collection('messages')
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(async snapshot => {
-        const msgList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+  // Use pagination hook instead of direct firestore query
+  const {
+    messages,
+    loading: paginationLoading,
+    hasMore,
+    loadMoreMessages,
+  } = usePaginatedMessages(roomId);
 
-        setMessages(msgList);
-
-        msgList.forEach(async msg => {
-          if (
-            msg.senderId !== auth().currentUser.uid &&
-            !msg.seen
-          ) {
-            try {
-              await firestore()
-                .collection('chats')
-                .doc(roomId)
-                .collection('messages')
-                .doc(msg.id)
-                .update({
-                  seen: true,
-                  seenAt: new Date(),
-                });
-            } catch (error) {
-              console.log(error);
-            }
-          }
-        });
-      });
-
-    return unsubscribe;
-  }, [roomId]);
-
+  // Listen for typing status
   useEffect(() => {
     const unsubscribe = firestore()
       .collection('chats')
@@ -145,12 +117,10 @@ const PrivateChatScreen = ({route}) => {
 
     setMessage('');
   } catch (error) {
-    console.log(
-      'SEND MESSAGE ERROR:',
-      error,
-    );
+    console.log('SEND MESSAGE ERROR:', error);
   }
-};
+  };
+
   const unsendMessage = async messageId => {
     try {
       await firestore()
@@ -236,6 +206,13 @@ const PrivateChatScreen = ({route}) => {
     );
   };
 
+  // Handle reaching the beginning (scroll up to load more)
+  const handleEndReached = () => {
+    if (!paginationLoading && hasMore) {
+      loadMoreMessages();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -260,6 +237,11 @@ const PrivateChatScreen = ({route}) => {
         contentContainerStyle={{
           padding: 10,
         }}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          <PaginationLoader visible={paginationLoading} />
+        }
       />
 
       <View style={styles.inputContainer}>
@@ -284,26 +266,32 @@ const PrivateChatScreen = ({route}) => {
 };
 
 export default PrivateChatScreen;
+      </View>
+    </View>
+  );
+};
+
+export default PrivateChatScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: colors.background,
   },
 
   header: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: colors.primary,
     padding: 18,
   },
 
   headerText: {
-    color: 'white',
+    color: colors.white,
     fontSize: 18,
     fontWeight: 'bold',
   },
 
   typingText: {
-    color: '#D8B4FE',
+    color: colors.secondary,
     marginTop: 4,
     fontSize: 12,
   },
@@ -316,23 +304,23 @@ const styles = StyleSheet.create({
   },
 
   myMessage: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: colors.primary,
     alignSelf: 'flex-end',
   },
 
   otherMessage: {
-    backgroundColor: '#1E293B',
+    backgroundColor: colors.input,
     alignSelf: 'flex-start',
   },
 
   email: {
-    color: '#CBD5E1',
+    color: colors.gray,
     fontSize: 11,
     marginBottom: 4,
   },
 
   message: {
-    color: 'white',
+    color: colors.white,
     fontSize: 16,
   },
 
@@ -344,41 +332,42 @@ const styles = StyleSheet.create({
   },
 
   time: {
-    color: '#CBD5E1',
+    color: colors.gray,
     fontSize: 10,
   },
 
   seen: {
-    color: '#22C55E',
-    marginLeft: 6,
-    fontSize: 12,
-    fontWeight: 'bold',
+    color: colors.secondary,
+    marginLeft: 5,
+    fontSize: 10,
   },
 
   inputContainer: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#1E293B',
+    gap: 10,
+    backgroundColor: colors.card,
   },
 
   input: {
     flex: 1,
-    backgroundColor: '#334155',
-    borderRadius: 10,
+    backgroundColor: colors.input,
+    borderRadius: 20,
     paddingHorizontal: 15,
-    color: 'white',
+    paddingVertical: 10,
+    color: colors.white,
   },
 
   sendBtn: {
-    marginLeft: 10,
-    backgroundColor: '#7C3AED',
-    borderRadius: 10,
-    justifyContent: 'center',
+    backgroundColor: colors.primary,
     paddingHorizontal: 20,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   sendText: {
-    color: 'white',
+    color: colors.white,
     fontWeight: 'bold',
   },
 });
