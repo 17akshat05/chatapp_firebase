@@ -2,17 +2,16 @@ import React, {useEffect, useState} from 'react';
 
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   FlatList,
   StyleSheet,
-  Alert,
 } from 'react-native';
 
 import {auth, firestore} from '../services/firebase';
 import {usePaginatedMessages} from '../hooks/usePaginatedMessages';
 import {PaginationLoader} from '../components/PaginationLoader';
+import {MessageBubble} from '../components/MessageBubble';
+import {ChatHeader} from '../components/ChatHeader';
+import {ChatInputField} from '../components/ChatInputField';
 import colors from '../theme/colors';
 
 const PrivateChatScreen = ({route}) => {
@@ -42,6 +41,157 @@ const PrivateChatScreen = ({route}) => {
 
     return unsubscribe;
   }, [roomId]);
+
+  const handleTyping = async text => {
+    setMessage(text);
+
+    try {
+      await firestore()
+        .collection('chats')
+        .doc(roomId)
+        .set(
+          {
+            typingBy: text.length
+              ? auth().currentUser.uid
+              : '',
+          },
+          {merge: true},
+        );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!message.trim()) {
+      return;
+    }
+
+    const currentMessage = message.trim();
+
+    try {
+      await firestore()
+        .collection('chats')
+        .doc(roomId)
+        .set(
+          {
+            typingBy: '',
+            lastMessage: currentMessage,
+            lastMessageTime: new Date(),
+
+            participants: [
+              auth().currentUser.uid,
+              user.id,
+            ],
+
+            participantEmails: [
+              auth().currentUser.email,
+              user.email,
+            ],
+
+            participantNames: [
+              auth().currentUser.displayName ||
+                auth().currentUser.email,
+              user.name,
+            ],
+          },
+          {merge: true},
+        );
+
+      await firestore()
+        .collection('chats')
+        .doc(roomId)
+        .collection('messages')
+        .add({
+          text: currentMessage,
+          senderId: auth().currentUser.uid,
+          senderEmail: auth().currentUser.email,
+          createdAt: new Date(),
+
+          seen: false,
+          seenAt: null,
+
+          deleted: false,
+        });
+
+      setMessage('');
+    } catch (error) {
+      console.log('SEND MESSAGE ERROR:', error);
+    }
+  };
+
+  const handleDeleteMessage = async messageId => {
+    try {
+      await firestore()
+        .collection('chats')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+          deleted: true,
+          text: '',
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const renderItem = ({item}) => (
+    <MessageBubble
+      item={item}
+      onDelete={handleDeleteMessage}
+    />
+  );
+
+  // Handle reaching the beginning (scroll up to load more)
+  const handleEndReached = () => {
+    if (!paginationLoading && hasMore) {
+      loadMoreMessages();
+    }
+  };
+
+  const isTyping = typingUser && typingUser !== auth().currentUser.uid;
+
+  return (
+    <View style={styles.container}>
+      <ChatHeader
+        userName={user.name}
+        isTyping={isTyping}
+      />
+
+      <FlatList
+        data={messages}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        inverted
+        contentContainerStyle={{
+          padding: 10,
+        }}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          <PaginationLoader visible={paginationLoading} />
+        }
+      />
+
+      <ChatInputField
+        value={message}
+        onChangeText={handleTyping}
+        onSend={sendMessage}
+        disabled={paginationLoading}
+      />
+    </View>
+  );
+};
+
+export default PrivateChatScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+});
 
   const handleTyping = async text => {
     setMessage(text);

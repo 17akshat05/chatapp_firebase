@@ -3,11 +3,11 @@ import React, {useState} from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 
 import {useAuth} from '../hooks/useAuth';
@@ -15,6 +15,7 @@ import {validateSignup} from '../utils/validation';
 import {InputField} from '../components/InputField';
 import {LoadingSpinner} from '../components/LoadingSpinner';
 import {ErrorAlert} from '../components/ErrorAlert';
+import {Button} from '../components/Button';
 import colors from '../theme/colors';
 
 const SignupScreen = ({navigation}) => {
@@ -120,14 +121,12 @@ const SignupScreen = ({navigation}) => {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+        <Button
+          title={loading ? 'Creating Account...' : 'Create Account'}
           onPress={handleSignup}
-          disabled={loading}>
-          <Text style={styles.buttonText}>
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </Text>
-        </TouchableOpacity>
+          disabled={loading}
+          style={styles.button}
+        />
 
         <View style={styles.divider} />
 
@@ -177,19 +176,8 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   button: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
     marginTop: 20,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
+    width: '100%',
   },
   divider: {
     height: 1,

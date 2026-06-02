@@ -2,11 +2,11 @@ import React, {useState} from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
-  StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 
 import {useAuth} from '../hooks/useAuth';
@@ -14,6 +14,7 @@ import {validateLogin} from '../utils/validation';
 import {InputField} from '../components/InputField';
 import {LoadingSpinner} from '../components/LoadingSpinner';
 import {ErrorAlert} from '../components/ErrorAlert';
+import {Button} from '../components/Button';
 import colors from '../theme/colors';
 
 const LoginScreen = ({navigation}) => {
@@ -89,14 +90,12 @@ const LoginScreen = ({navigation}) => {
           editable={!loading}
         />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+        <Button
+          title={loading ? 'Signing In...' : 'Sign In'}
           onPress={handleLogin}
-          disabled={loading}>
-          <Text style={styles.buttonText}>
-            {loading ? 'Signing In...' : 'Sign In'}
-          </Text>
-        </TouchableOpacity>
+          disabled={loading}
+          style={styles.button}
+        />
 
         <View style={styles.divider} />
 
@@ -138,19 +137,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   button: {
-    backgroundColor: colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
     marginTop: 20,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
+    width: '100%',
   },
   divider: {
     height: 1,
